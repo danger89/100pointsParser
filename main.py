@@ -127,7 +127,7 @@ def main():
     login, password = Auth.login, Auth.password
 
     method = get_method()
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome("chromedriver.exe")
 
     try:
         method_handler(driver=driver, method=method, login=login, password=password)
