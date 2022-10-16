@@ -26,14 +26,23 @@ def parse(driver):
     # проходимся по всем домашним работам
     while len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(By.TAG_NAME, 'tr'))) != 0:
         row = table_rows[0]
+
         preview_button = row.find_elements(By.TAG_NAME, 'td')[0].find_element(By.TAG_NAME, 'a')
+
+        student_name = row.find_elements(By.TAG_NAME, 'td')[2].find_element(By.TAG_NAME, 'div').text
+        homework_link = preview_button.get_attribute("href")
+
         preview_button.click()
         sleep(1)
+
+        print(f"Имя студента, чья работа проверяется: {student_name}\n"
+              f"Ссылка на работу: {homework_link}")
 
         div_blocks = driver.find_elements(By.CSS_SELECTOR, "div.tab-pane>div")
 
         # проходимся по всем заданиям
         for i in range(2, len(div_blocks), 3):
+            print(f" - Задание №{i // 3 + 1}")
             admin_area = div_blocks[i].find_elements(By.XPATH, './*')
 
             checkbox = admin_area[0].find_element(By.XPATH, './label')
@@ -43,26 +52,33 @@ def parse(driver):
             driver.execute_script("arguments[0].scrollIntoView();", checkbox)
             sleep(.5)
             checkbox.click()
+            print('     - Нажата кнопка "Проверено дежурным куратором"')
 
             driver.execute_script("arguments[0].scrollIntoView();", comment_area)
             sleep(.5)
             comment_area.send_keys("Работа отправлена на проверку твоему куратору")
+            print('     - Добавлен комментарий к заданию')
 
             driver.execute_script("arguments[0].scrollIntoView();", save_answer_btn)
+            sleep(.5)
             save_answer_btn.click()
+            print('     - Ответ сохранен')
+
             sleep(.5)
 
         apply_btn = driver.find_element(By.CSS_SELECTOR, '#decision_buttons>button:first-child')
         apply_btn.click()
-        sleep(10)
+        sleep(2)
 
         apply_confirm_btn = driver.find_element(By.ID, 'applyBtn')
         apply_confirm_btn.click()
         sleep(2)
+        print(" - Домашняя работа принята")
 
         save_homework_btn = driver.find_element(By.CSS_SELECTOR, ".card-footer>button")
         save_homework_btn.click()
         sleep(5)
+        print(" - Домашняя работа сохранена")
 
         for _ in range(3):
             driver.back()
@@ -127,7 +143,7 @@ def main():
     login, password = Auth.login, Auth.password
 
     method = get_method()
-    driver = webdriver.Chrome("chromedriver.exe")
+    driver = webdriver.Chrome()
 
     try:
         method_handler(driver=driver, method=method, login=login, password=password)
