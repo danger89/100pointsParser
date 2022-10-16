@@ -14,7 +14,7 @@ def data_handler(data):
 
     while int(input("Если данные введены верно нажмите 1, иначе 0: ")) == 0:
         login = str(input("Введите логин: "))
-        password = str(input("Введите пароль"))
+        password = str(input("Введите пароль: "))
 
     Auth.login, Auth.password = login, password
     data["login"], data["password"] = login, password

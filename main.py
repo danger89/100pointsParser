@@ -13,13 +13,12 @@ def get_method() -> list:
                                 "Введите номер метода: "))) not in [1, 2]):
         print("Введите валидное значение..")
 
-    match method:
-        case 1:
-            path = str(input("Введите путь (Формат: Курс/Модуль/Домашка) (Названия строго, как на сайте): ")).split("/")
-            return [method, path]
-        case 2:
-            link = str(input("Введите ссылку: "))
-            return [method, link]
+    if method == 1:
+        path = str(input("Введите путь (Формат: Курс/Модуль/Домашка) (Названия строго, как на сайте): ")).split("/")
+        return [method, path]
+    else:
+        link = str(input("Введите ссылку: "))
+        return [method, link]
 
 
 def parse(driver):
