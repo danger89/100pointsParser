@@ -3,7 +3,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from time import sleep
 from config import Auth, json_handler
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 
 def get_method() -> list:
@@ -24,7 +23,8 @@ def get_method() -> list:
 def parse(driver):
     cnt = 0
     # проходимся по всем домашним работам
-    while len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(By.TAG_NAME, 'tr'))) != 0:
+    while len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(By.TAG_NAME,
+                                                                                                      'tr'))) != 0:
         row = table_rows[0]
 
         preview_button = row.find_elements(By.TAG_NAME, 'td')[0].find_element(By.TAG_NAME, 'a')
@@ -37,6 +37,15 @@ def parse(driver):
 
         print(f"Имя студента, чья работа проверяется: {student_name}\n"
               f"Ссылка на работу: {homework_link}")
+
+        try:
+            start_checking_btn = driver.find_element(By.ID, 'blockHomework')
+            start_checking_btn.click()
+            print(' - Нажата кнопка "Начать проверку"')
+            sleep(2)
+        except Exception as ex:
+            print(' - Кнопка "Начать проверку" уже нажата')
+            print(ex)
 
         div_blocks = driver.find_elements(By.CSS_SELECTOR, "div.tab-pane>div")
 
@@ -73,12 +82,8 @@ def parse(driver):
         apply_confirm_btn = driver.find_element(By.ID, 'applyBtn')
         apply_confirm_btn.click()
         sleep(2)
-        print(" - Домашняя работа принята")
-
-        save_homework_btn = driver.find_element(By.CSS_SELECTOR, ".card-footer>button")
-        save_homework_btn.click()
-        sleep(5)
-        print(" - Домашняя работа сохранена")
+        print(" - Домашняя работа принята\n"
+              " - Проверка домашней работы завершена")
 
         for _ in range(3):
             driver.back()
@@ -135,15 +140,11 @@ def method_handler(driver, method: list, login: str, password: str):
 
 
 def main():
-    # настройка, чтобы алгоритм не дожидался загрузки изображений в домашней работе
-    caps = DesiredCapabilities().CHROME
-    caps["pageLoadStrategy"] = "eager"
-
     json_handler()
     login, password = Auth.login, Auth.password
 
     method = get_method()
-    driver = webdriver.Chrome("chromedriver.exe")
+    driver = webdriver.Chrome()
 
     try:
         method_handler(driver=driver, method=method, login=login, password=password)
