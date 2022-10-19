@@ -127,7 +127,7 @@ def main():
     login, password = json_handler()
 
     data = Data(method=get_method(), login=login, password=password)
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome("chromedriver.exe")
 
     starter(driver, data)
 
