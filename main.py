@@ -1,8 +1,27 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+from dataclasses import dataclass
 from time import sleep
 from config import Auth, json_handler
+
+
+@dataclass()
+class Data:
+    method: list
+    k: int = 0
+    cnt: int = 0
+
+
+def restart(driver):
+    driver.execute_script("window.open()")
+    driver.switch_to.window(driver.window_handles[0])
+    sleep(.5)
+
+    driver.close()
+    sleep(.5)
+
+    starter(driver)
 
 
 def get_method() -> list:
@@ -21,11 +40,10 @@ def get_method() -> list:
 
 
 def parse(driver):
-    cnt = 0
     # проходимся по всем домашним работам
     while len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(By.TAG_NAME,
                                                                                                       'tr'))) != 0:
-        row = table_rows[0]
+        row = table_rows[Data.k % 15]
 
         preview_button = row.find_elements(By.TAG_NAME, 'td')[0].find_element(By.TAG_NAME, 'a')
 
@@ -35,17 +53,34 @@ def parse(driver):
         preview_button.click()
         sleep(1)
 
-        print(f"Имя студента, чья работа проверяется: {student_name}\n"
-              f"Ссылка на работу: {homework_link}")
-
+        # исключение домашняя работа уже проверяется / домашняя работа проверяется другим куратором
         try:
             start_checking_btn = driver.find_element(By.ID, 'blockHomework')
             start_checking_btn.click()
             print(' - Нажата кнопка "Начать проверку"')
+            print(f"Имя студента, чья работа проверяется: {student_name}\n"
+                  f"Ссылка на работу: {homework_link}")
             sleep(2)
         except Exception as ex:
-            print(' - Кнопка "Начать проверку" уже нажата')
-            print(ex)
+            # исключение домашняя работа уже проверяется
+            try:
+                active_hw_btn = driver.find_element(By.CSS_SELECTOR, ".alert>a")
+                active_hw_btn.click()
+                print(" - Ошибка: Уже проверяется другая домашняя работа")
+                print(ex)
+                sleep(2)
+
+                driver.find_element(By.ID, 'unblockHomework').click()
+                sleep(.5)
+
+                restart(driver)
+            # исключение домашняя работа проверяется другим куратором
+            except Exception as ex:
+                Data.k += 1
+                print(" - Ошибка: Работа проверяется другим куратором")
+                print(ex)
+
+                restart(driver)
 
         div_blocks = driver.find_elements(By.CSS_SELECTOR, "div.tab-pane>div")
 
@@ -89,31 +124,38 @@ def parse(driver):
             driver.back()
             sleep(.3)
 
-        cnt += 1
-        print(f"Кол-во успешно обработанных домашних работ: {cnt}\n...")
+        Data.cnt += 1
+        print(f"Кол-во успешно обработанных домашних работ: {Data.cnt}\n...")
 
         driver.refresh()
         sleep(2)
 
 
-def method_handler(driver, method: list, login: str, password: str):
+def method_handler(driver):
+    method = Data.method
     if method[0] == 1:
         driver.get("https://api.100points.ru/exchange/index")
     elif method[0] == 2:
         driver.get(method[1])
 
-    login_input = driver.find_element(By.XPATH, '//*[@id="email"]')
-    passwd_input = driver.find_element(By.XPATH, '//*[@id="password"]')
-    remember_me = driver.find_element(By.XPATH, '//*[@id="remember_me"]')
+    try:
+        login_input = driver.find_element(By.XPATH, '//*[@id="email"]')
+        passwd_input = driver.find_element(By.XPATH, '//*[@id="password"]')
+        remember_me = driver.find_element(By.XPATH, '//*[@id="remember_me"]')
 
-    login_input.send_keys(login)
-    passwd_input.send_keys(password)
-    remember_me.click()
-    sleep(1)
+        login_input.send_keys(Auth.login)
+        passwd_input.send_keys(Auth.password)
+        remember_me.click()
+        sleep(1)
 
-    auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
-    auth_button.click()
-    print("...\nПользователь успешно авторизован\n...")
+        auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
+        auth_button.click()
+        print("...\nПользователь успешно авторизован\n...")
+
+    except Exception as ex:
+        print(ex)
+        print("Пользователь уже авторизован\n...")
+
     sleep(3)
     # обработка первого метода
     if method[0] == 1:
@@ -135,25 +177,27 @@ def method_handler(driver, method: list, login: str, password: str):
                                                       'div[1]/div/form/div[2]/button')
         submit_button.click()
         sleep(3)
-
     sleep(3)
+
+
+def starter(driver):
+    try:
+        method_handler(driver)
+        parse(driver=driver)
+    except Exception as ex:
+        print(f"ОШИБКА - {ex}")
+        sleep(60)
+        restart(driver)
 
 
 def main():
     json_handler()
-    login, password = Auth.login, Auth.password
 
-    method = get_method()
-    driver = webdriver.Chrome("chromedriver.exe")
+    Data.method = get_method()
+    driver = webdriver.Chrome()
+    driver.get("https://google.com")
 
-    try:
-        method_handler(driver=driver, method=method, login=login, password=password)
-        parse(driver=driver)
-
-    except Exception as ex:
-        print(ex)
-        driver.close()
-        driver.quit()
+    starter(driver)
 
     driver.close()
     driver.quit()
