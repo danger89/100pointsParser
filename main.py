@@ -194,8 +194,7 @@ def main():
     json_handler()
 
     Data.method = get_method()
-    driver = webdriver.Chrome()
-    driver.get("https://google.com")
+    driver = webdriver.Chrome("chromedriver.exe")
 
     starter(driver)
 
