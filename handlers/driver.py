@@ -1,52 +1,111 @@
-def method_handler(sources: dict, data):
-    driver = sources["driver"]
-    By = sources["By"]
-    Select = sources["Select"]
-    sleep = sources["sleep"]
+from handlers.user import method_info_handler
+from handlers.config import Config
 
-    method = data.method
-    if method[0] == 1:
-        driver.get("https://api.100points.ru/exchange/index")
-    elif method[0] == 2:
-        driver.get(method[1])
 
+def method_handler(sources: dict, data):  # функция, которая обрабатывает выбранный метод
+    driver, By, Select, sleep = sources["driver"], sources["By"], sources["Select"], sources["sleep"]
+
+    # попытка авторизации
     try:
-        login_input = driver.find_element(By.XPATH, '//*[@id="email"]')
-        passwd_input = driver.find_element(By.XPATH, '//*[@id="password"]')
-        remember_me = driver.find_element(By.XPATH, '//*[@id="remember_me"]')
-
-        login_input.send_keys(data.login)
-        passwd_input.send_keys(data.password)
-        remember_me.click()
-        sleep(1)
-
-        auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
-        auth_button.click()
-        print("...\nПользователь успешно авторизован\n...")
+        auth_handler(sources, data)
 
     except Exception as ex:
         print(ex)
         print("Пользователь уже авторизован\n...")
 
-    sleep(3)
-    # обработка первого метода
-    if method[0] == 1:
-        path = method[1]
+    if data.method == 0:
+        data.method = method_info_handler()
 
-        course_form = Select(driver.find_element(By.ID, 'course_id'))
-        course_form.select_by_visible_text(path[0])
+    last_homework_info_handler = Config(param="last_homework_info")
+
+    if data.method["type"] == "path":  # обработка первого метода
+        courses_list_handler = Config(param="courses_list")
+
+        courses_list = courses_list_handler.get()
+        course_form = driver.find_element(By.ID, 'course_id')
+
+        full_courses_list = list(map(lambda elem: elem.text, course_form.find_elements(By.TAG_NAME, "option")))[1:]
+        if not courses_list:
+            print(" - Конфигурационный файл, содержащий названия курсов пуст...\n"
+                  " - Выберите курсы из списка, которые нужно добавить:\n")
+            for i in range(len(full_courses_list)):
+                print(f"    {i + 1}. {full_courses_list[i]}")
+            print(" - Введите номера ")
+            full_courses_list_indexes = list(map(int, input(" - Введите номера курсов через пробел (пример: 1 4 3): ").split()))
+            # защита от дурака + обработка индекса
+            full_courses_list_indexes_new = [index - 1 for index in list(set(full_courses_list_indexes)) if 0 <= index - 1 < len(full_courses_list)]
+            courses_list = list(map(lambda index: full_courses_list[index], full_courses_list_indexes_new))
+            courses_list_handler.add(courses_list)
+        # здесь через else сделать редактирование списка
+
+        print(" - Выберите курс:")
+        for i in range(len(courses_list)):
+            print(f"    {i + 1}. {courses_list[i]}")
+        # защита от дурака
+        while not (0 <= (course_index := int(input(" - Введите номер выбранного элемента: ")) - 1) < len(courses_list)):
+            print("Ошибка: Введено неверное значение")
+        Select(course_form).select_by_visible_text(courses_list[course_index])
         sleep(.5)
 
-        module_form = Select(driver.find_element(By.ID, 'module_id'))
-        module_form.select_by_visible_text(path[1])
+        module_form = driver.find_element(By.ID, 'module_id')
+        module_list = list(map(lambda elem: elem.text, module_form.find_elements(By.TAG_NAME, "option")))[1:]
+        print(" - Выберите блок:")
+        for i in range(len(module_list)):
+            print(f"    {i + 1}. {module_list[i]}")
+        # защита от дурака
+        while not (0 <= (block_index := int(input(" - Введите номер выбранного элемента: ")) - 1) < len(module_list)):
+            print("Ошибка: Введено неверное значение")
+        Select(module_form).select_by_visible_text(module_list[block_index])
         sleep(.5)
 
-        lesson_form = Select(driver.find_element(By.ID, 'lesson_id'))
-        lesson_form.select_by_visible_text(path[2])
+        lesson_form = driver.find_element(By.ID, 'lesson_id')
+        lesson_list = list(map(lambda elem: elem.text, lesson_form.find_elements(By.TAG_NAME, "option")))[1:]
+        print(" - Выберите урок:")
+        for i in range(len(lesson_list)):
+            print(f"    {i + 1}. {lesson_list[i]}")
+        # защита от дурака
+        while not (0 <= (lesson_index := int(input(" - Введите номер выбранного элемента: ")) - 1) < len(lesson_list)):
+            print("Ошибка: Введено неверное значение")
+        Select(lesson_form).select_by_visible_text(lesson_list[lesson_index])
         sleep(.5)
 
         submit_button = driver.find_element(By.XPATH, '/html/body/div/div[1]/section/div/div/div/div/'
                                                       'div[1]/div/form/div[2]/button')
         submit_button.click()
-        sleep(3)
+
+        data.method["type"] = "link"
+        data.method["link"] = driver.current_url()
+
+        last_homework_info_handler.add({
+            "name": lesson_list[lesson_index],
+            "link": data.method["link"]
+        })
+
+    elif data.method["type"] == "link":
+        driver.get(data.method["link"])
+        sleep(2)
+        last_homework_info_handler.add({
+            "name": driver.find_element(By.CSS_SELECTOR, "#lesson_id option[selected]").text,
+            "link": data.method["link"]
+        })
+
+    sleep(3)
+
+
+def auth_handler(sources: dict, data):
+    driver, By, sleep = sources["driver"], sources["By"], sources["sleep"]
+
+    login_input = driver.find_element(By.XPATH, '//*[@id="email"]')
+    passwd_input = driver.find_element(By.XPATH, '//*[@id="password"]')
+    remember_me = driver.find_element(By.XPATH, '//*[@id="remember_me"]')
+
+    login_input.send_keys(data.login)
+    passwd_input.send_keys(data.password)
+    remember_me.click()
+    sleep(1)
+
+    auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
+    auth_button.click()
+    print("...\nПользователь успешно авторизован\n...")
+
     sleep(3)

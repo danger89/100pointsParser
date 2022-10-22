@@ -1,0 +1,13 @@
+{
+    "auth_info": [
+        {
+            "login": "",
+            "password": ""
+        }
+    ],
+    "last_homework_info": {
+        "name": "",
+        "link": ""
+    },
+    "courses_list": []
+}

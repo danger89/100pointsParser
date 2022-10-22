@@ -3,24 +3,29 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from dataclasses import dataclass
 from time import sleep
-from handlers.user_input import *
+from handlers.user import auth_info_handler
 from handlers.driver import *
 
 
 @dataclass(kw_only=True)
-class Data:
-    method: list
+class Data:  # наследуется класс data, внутри которого вся нужная информация
     login: str
     password: str
+    method: dict = 0
     k: int = 0
     cnt: int = 0
 
 
-def parse(driver, data):
+def parse(driver, data):  # parsing функция
     # проходимся по всем домашним работам
-    while len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(By.TAG_NAME,
-                                                                                                      'tr'))) != 0:
-        row = table_rows[data.k % 15]
+    while hw_cnt := len((table_rows := driver.find_element(By.XPATH, '//*[@id="example2"]/tbody').find_elements(
+            By.TAG_NAME, 'tr'))) != 0:
+
+        # защита: если кол-во работ больше числа k
+        if data.k > hw_cnt:
+            data.k = 0
+
+        row = table_rows[data.k]
 
         preview_button = row.find_elements(By.TAG_NAME, 'td')[0].find_element(By.TAG_NAME, 'a')
 
@@ -38,8 +43,7 @@ def parse(driver, data):
             print(f"Имя студента, чья работа проверяется: {student_name}\n"
                   f"Ссылка на работу: {homework_link}")
             sleep(2)
-        except Exception as ex:
-            # исключение домашняя работа уже проверяется
+        except Exception as ex:  # исключение: домашняя работа уже проверяется
             try:
                 active_hw_btn = driver.find_element(By.CSS_SELECTOR, ".alert>a")
                 active_hw_btn.click()
@@ -51,8 +55,7 @@ def parse(driver, data):
                 sleep(.5)
 
                 starter(driver, data)
-            # исключение домашняя работа проверяется другим куратором
-            except Exception as ex:
+            except Exception as ex:  # исключение: домашняя работа проверяется другим куратором
                 data.k += 1
                 print(" - Ошибка: Работа проверяется другим куратором")
                 print(ex)
@@ -108,28 +111,58 @@ def parse(driver, data):
         sleep(2)
 
 
-def starter(driver, data):
+def starter(driver, data, old=0):  # функция с которой parser начинает работу
     try:
-        method_handler(sources={
-            "driver": driver,
-            "By": By,
-            "Select": Select,
-            "sleep": sleep
-        }, data=data)
+        if old == 1:
+            driver.get(data.method["link"])
+            auth_handler(sources={
+                "driver": driver,
+                "By": By,
+                "sleep": sleep
+            }, data=data)
+        else:
+            driver.get("https://api.100points.ru/exchange/index")
+            method_handler(sources={
+                "driver": driver,
+                "By": By,
+                "Select": Select,
+                "sleep": sleep
+            }, data=data)
         parse(driver, data)
-    except Exception as ex:
+    except Exception as ex:  # исключение: при какой-либо ошибке происходит засыпание и заново запускается функция
         print(f"ОШИБКА - {ex}")
         sleep(60)
         starter(driver, data)
 
 
 def main():
-    login, password = json_handler()
-
-    data = Data(method=get_method(), login=login, password=password)
+    login, password = auth_info_handler()
     driver = webdriver.Chrome("chromedriver.exe")
+    last_homework_info = Config("last_homework_info").get()
+    data = Data(login=login, password=password)
 
-    starter(driver, data)
+    if last_homework_info != {
+        "name": "",
+        "link": ""
+    }:
+        # защита от дурака
+        while (old := int(input(f' - Выберите метод запуска:\n'
+                                f'   1. Запустить бота\n'
+                                f'   2. Продолжить проверку "{last_homework_info["name"]}"\n'
+                                f' - Выберите номер элемента: '))) not in [1, 2]:
+            print("Ошибка: Введите валидное значение")
+
+        data = Data(login=login, password=password)
+
+        if old == 2:
+            data.method = {
+                "type": "link",
+                "link": last_homework_info["link"]
+            }
+
+        starter(driver, data, old - 1)
+    else:
+        starter(driver, data)
 
     driver.close()
     driver.quit()
