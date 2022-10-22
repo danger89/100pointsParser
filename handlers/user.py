@@ -34,8 +34,8 @@ def auth_info_handler():  # обработчик логина и пароля
             password = str(input("Введите пароль: "))
 
         auth_info["login"], auth_info["password"] = login, password
-        data["auth_info"] = auth_info
+        data["auth_info"] = [auth_info]
 
-        with open("misc/auth_data.json", 'w') as json_file:  # запись новых данных в файл
+        with open("misc/config.json", 'w') as json_file:  # запись новых данных в файл
             json.dump(data, json_file, indent=4)
     return auth_info["login"], auth_info["password"]

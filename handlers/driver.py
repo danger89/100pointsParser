@@ -73,8 +73,10 @@ def method_handler(sources: dict, data):  # функция, которая об�
                                                       'div[1]/div/form/div[2]/button')
         submit_button.click()
 
-        data.method["type"] = "link"
-        data.method["link"] = driver.current_url()
+        data.method = {
+            "type": "link",
+            "link": driver.current_url
+        }
 
         last_homework_info_handler.add({
             "name": lesson_list[lesson_index],
