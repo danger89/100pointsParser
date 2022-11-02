@@ -137,7 +137,7 @@ def starter(driver, data, old=0):  # функция с которой parser н�
 
 def main():
     login, password = auth_info_handler()
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome("chromedriver.exe")
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
 
