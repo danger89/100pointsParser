@@ -7,7 +7,7 @@ from handlers.user import auth_info_handler
 from handlers.driver import *
 
 
-@dataclass(kw_only=True)
+@dataclass()
 class Data:  # наследуется класс data, внутри которого вся нужная информация
     login: str
     password: str
@@ -137,7 +137,7 @@ def starter(driver, data, old=0):  # функция с которой parser н�
 
 def main():
     login, password = auth_info_handler()
-    driver = webdriver.Chrome("chromedriver.exe")
+    driver = webdriver.Chrome()
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
 
