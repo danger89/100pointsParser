@@ -1,13 +1,14 @@
 from handlers.user import method_info_handler
 from handlers.config import Config
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
+from time import sleep
 
 
-def method_handler(sources: dict, data):  # функция, которая обрабатывает выбранный метод
-    driver, By, Select, sleep = sources["driver"], sources["By"], sources["Select"], sources["sleep"]
-
+def method_handler(driver, data):  # функция, которая обрабатывает выбранный метод
     # попытка авторизации
     try:
-        auth_handler(sources, data)
+        auth_handler(driver, data)
 
     except Exception as ex:
         print(ex)
@@ -31,15 +32,21 @@ def method_handler(sources: dict, data):  # функция, которая об�
             for i in range(len(full_courses_list)):
                 print(f"    {i + 1}. {full_courses_list[i]}")
             print(" - Введите номера ")
-            full_courses_list_indexes = list(map(int, input(" - Введите номера курсов через пробел (пример: 1 4 3): ").split()))
+            full_courses_list_indexes = list(
+                map(int, input(" - Введите номера курсов через пробел (пример: 1 4 3): ").split()))
             # защита от дурака + обработка индекса
-            full_courses_list_indexes_new = [index - 1 for index in list(set(full_courses_list_indexes)) if 0 <= index - 1 < len(full_courses_list)]
+            full_courses_list_indexes_new = [index - 1 for index in list(set(full_courses_list_indexes)) if
+                                             0 <= index - 1 < len(full_courses_list)]
             courses_list = list(map(lambda index: full_courses_list[index], full_courses_list_indexes_new))
             courses_list_handler.add(courses_list)
-        elif (action := int(input(" - Выберите действие:\n"
-                                  "     1. Выбрать курс\n"
-                                  "     2. Изменить список курсов\n"
-                                  " - Выберите номер элемента: "))) == 2:
+
+        while not (1 <= (action := int(input(" - Выберите действие:\n"
+                                             "     1. Выбрать курс\n"
+                                             "     2. Изменить список курсов\n"
+                                             " - Выберите номер элемента: "))) <= 2):
+            print("Ошибка: Введено неверное значение")
+
+        if action == 2:
             pass
         else:
             print(" - Выберите курс:")
@@ -98,23 +105,24 @@ def method_handler(sources: dict, data):  # функция, которая об�
     sleep(3)
 
 
-def auth_handler(sources: dict, data):
-    driver, By, sleep = sources["driver"], sources["By"], sources["sleep"]
+def auth_handler(driver, data):
     while True:
         try:
             login_input = driver.find_element(By.XPATH, '//*[@id="email"]')
             passwd_input = driver.find_element(By.XPATH, '//*[@id="password"]')
             remember_me = driver.find_element(By.XPATH, '//*[@id="remember_me"]')
+            auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
 
+        except Exception as ex:
+            print(ex)
+            print("...\nПользователь успешно авторизован\n...")
+            break
+        else:
             login_input.send_keys(data.login)
             passwd_input.send_keys(data.password)
             remember_me.click()
             sleep(1)
 
-            auth_button = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/form/div[4]/button')
             auth_button.click()
             sleep(3)
-        except Exception as ex:
-            print(ex)
-            print("...\nПользователь успешно авторизован\n...")
-            break
+            driver.refresh()

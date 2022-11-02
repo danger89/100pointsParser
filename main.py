@@ -1,8 +1,5 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 from dataclasses import dataclass
-from time import sleep
 from handlers.user import auth_info_handler
 from handlers.driver import *
 
@@ -115,19 +112,10 @@ def starter(driver, data, old=0):  # функция с которой parser н�
     try:
         if old == 1:
             driver.get(data.method["link"])
-            auth_handler(sources={
-                "driver": driver,
-                "By": By,
-                "sleep": sleep
-            }, data=data)
+            auth_handler(driver, data=data)
         else:
             driver.get("https://api.100points.ru/exchange/index")
-            method_handler(sources={
-                "driver": driver,
-                "By": By,
-                "Select": Select,
-                "sleep": sleep
-            }, data=data)
+            method_handler(driver, data=data)
         parse(driver, data)
     except Exception as ex:  # исключение: при какой-либо ошибке происходит засыпание и заново запускается функция
         print(f"ОШИБКА - {ex}")
@@ -140,6 +128,7 @@ def main():
     driver = webdriver.Chrome("chromedriver.exe")
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
+    old = 0
 
     if last_homework_info != {
         "name": "",
@@ -160,9 +149,9 @@ def main():
                 "link": last_homework_info["link"]
             }
 
-        starter(driver, data, old - 1)
-    else:
-        starter(driver, data)
+        old -= 1
+
+    starter(driver, data, old)
 
     driver.close()
     driver.quit()
