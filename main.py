@@ -121,13 +121,15 @@ def starter(driver, data, old=0):  # функция с которой parser н�
         parse(driver, data)
     except Exception as ex:  # исключение: при какой-либо ошибке происходит засыпание и заново запускается функция
         print(f"ОШИБКА - {ex}")
-        sleep(60)
+        sleep(10)
         starter(driver, data)
 
 
 def main():
     login, password = auth_info_handler()
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    options = webdriver.ChromeOptions()
+    options.add_argument("--log-level=3")
+    driver = webdriver.Chrome(chrome_options=options, service=ChromeService(ChromeDriverManager().install()))
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
     old = 0
