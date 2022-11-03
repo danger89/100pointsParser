@@ -1,4 +1,6 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 from dataclasses import dataclass
 from handlers.user import auth_info_handler
 from handlers.driver import *
@@ -125,7 +127,7 @@ def starter(driver, data, old=0):  # функция с которой parser н�
 
 def main():
     login, password = auth_info_handler()
-    driver = webdriver.Chrome(executable_path=r'chromedriver.exe')
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
     old = 0
