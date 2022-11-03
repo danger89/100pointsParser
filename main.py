@@ -129,7 +129,7 @@ def main():
     login, password = auth_info_handler()
     options = webdriver.ChromeOptions()
     options.add_argument("--log-level=3")
-    driver = webdriver.Chrome(chrome_options=options, service=ChromeService(ChromeDriverManager().install()))
+    driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
     last_homework_info = Config("last_homework_info").get()
     data = Data(login=login, password=password)
     old = 0
