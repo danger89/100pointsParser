@@ -36,8 +36,7 @@ def parse(driver, data):  # parsing функция
 
         # исключение домашняя работа уже проверяется / домашняя работа проверяется другим куратором
         try:
-            start_checking_btn = driver.find_element(By.ID, 'blockHomework')
-            start_checking_btn.click()
+            div_blocks = driver.find_elements(By.CSS_SELECTOR, "div.tab-pane>div")
             print(' - Нажата кнопка "Начать проверку"')
             print(f"Имя студента, чья работа проверяется: {student_name}\n"
                   f"Ссылка на работу: {homework_link}")
@@ -61,8 +60,6 @@ def parse(driver, data):  # parsing функция
 
                 starter(driver, data)
 
-        div_blocks = driver.find_elements(By.CSS_SELECTOR, "div.tab-pane>div")
-
         # проходимся по всем заданиям
         for i in range(2, len(div_blocks), 3):
             print(f" - Задание №{i // 3 + 1}")
@@ -73,21 +70,21 @@ def parse(driver, data):  # parsing функция
             save_answer_btn = admin_area[2].find_elements(By.XPATH, './div')[-1].find_element(By.TAG_NAME, 'button')
 
             driver.execute_script("arguments[0].scrollIntoView();", checkbox)
-            sleep(.5)
+            sleep(.1)
             checkbox.click()
             print('     - Нажата кнопка "Проверено дежурным куратором"')
 
             driver.execute_script("arguments[0].scrollIntoView();", comment_area)
-            sleep(.5)
+            sleep(.1)
             comment_area.send_keys("Работа отправлена на проверку твоему куратору")
             print('     - Добавлен комментарий к заданию')
 
             driver.execute_script("arguments[0].scrollIntoView();", save_answer_btn)
-            sleep(.5)
+            sleep(.1)
             save_answer_btn.click()
             print('     - Ответ сохранен')
 
-            sleep(.5)
+            sleep(.1)
 
         apply_btn = driver.find_element(By.CSS_SELECTOR, '#decision_buttons>button:first-child')
         apply_btn.click()
@@ -99,14 +96,10 @@ def parse(driver, data):  # parsing функция
         print(" - Домашняя работа принята\n"
               " - Проверка домашней работы завершена")
 
-        for _ in range(3):
-            driver.back()
-            sleep(.3)
-
         data.cnt += 1
         print(f"Кол-во успешно обработанных домашних работ: {data.cnt}\n...")
 
-        driver.refresh()
+        driver.get(data.method["link"])
         sleep(2)
 
 
