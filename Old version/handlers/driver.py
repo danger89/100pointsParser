@@ -1,5 +1,5 @@
-from handlers.user import method_info_handler
-from handlers.config import Config
+from Old.handlers.user import method_info_handler
+from Old.handlers.config import Config
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from time import sleep
