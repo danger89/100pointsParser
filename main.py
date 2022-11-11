@@ -74,6 +74,8 @@ class Session:
                 pages_cnt = int(soup.find_all('li', class_='paginate_button page-item')[-1].text.split()[0])
             except Exception as ex:
                 print(" - Что-то пошло не так...")
+                print(f" - Проблемный элемент: \n"
+                      f"    {soup.find_all('li', class_='paginate_button page-item')}")
                 print(ex)
             else:
                 print(" - Собираю ссылки на работы учеников...")
@@ -136,7 +138,7 @@ class Session:
                     post_link = f"https://api.100points.ru/student_homework/save_answer/{link.split('/')[-1]}"
                     save_data = {
                         f'is_validate:{id_dict["main"]}': 'on',
-                        f'points:{id_dict["main"]}': 0,
+                        f'points:{id_dict["main"]}': 1,
                         f'comment:{id_dict["textarea"]}': '<p>Работа отправлена на проверку твоему куратору</p>'
                     }
 
