@@ -7,7 +7,8 @@ $ git clone https://github.com/slmv-e/100pointsParser.git
 ````
 $ cd 100pointsParser
 ````
-3. ````
+3. 
+````
 $ pip install -r requirements.txt
 ````
 4. Готово!
