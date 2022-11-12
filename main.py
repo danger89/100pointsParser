@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 def get_browser_data(login, password) -> tuple:
     url = "https://api.100points.ru/login"
-    user_agent = fake_useragent.UserAgent(verify_ssl=False).random
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
 
     session = requests.Session()
 
