@@ -72,33 +72,33 @@ class Session:
             try:
                 pages_cnt = int(soup.find_all('li', class_='paginate_button page-item')[-1].text.split()[0])
             except Exception as ex:
-                print(" - Что-то пошло не так...")
+                print(f" - Что-то пошло не так...")
                 print(f" - Проблемный элемент: \n"
                       f"    {soup.find_all('li', class_='paginate_button page-item')}")
                 print(ex)
-            else:
-                print(" - Собираю ссылки на работы учеников...")
-                for page in range(1, pages_cnt + 1):
+                pages_cnt = 1
+
+            print(" - Собираю ссылки на работы учеников...")
+            for page in range(1, pages_cnt + 1):
+                try:
+                    page_link = f"{self.url}&page={page}"
+                    page_response = self.session.get(page_link).text
+                    page_soup = BeautifulSoup(page_response, 'html.parser')
+                except Exception as ex:
+                    print(' - Ошибка запроса...')
+                    print(ex)
+                else:
                     try:
-                        page_link = f"{self.url}&page={page}"
-                        page_response = self.session.get(page_link).text
-                        page_soup = BeautifulSoup(page_response, 'html.parser')
+                        table_rows = page_soup.find('tbody').find_all('tr')
                     except Exception as ex:
-                        print(' - Ошибка запроса...')
+                        print(" - Что-то пошло не так...")
                         print(ex)
                     else:
-                        try:
-                            table_rows = page_soup.find('tbody').find_all('tr')
-                        except Exception as ex:
-                            print(" - Что-то пошло не так...")
-                            print(ex)
-                        else:
-                            for i in range(len(table_rows)):
-                                homework_link = table_rows[i].find_all('td')[0].find('a', href=True)['href']
-                                homework_links.append(homework_link)
-                print(" - Все ссылки успешно получены\n")
-            finally:
-                return homework_links
+                        for i in range(len(table_rows)):
+                            homework_link = table_rows[i].find_all('td')[0].find('a', href=True)['href']
+                            homework_links.append(homework_link)
+            print(" - Все ссылки успешно получены\n")
+            return homework_links
 
     def start(self):
         # получаем все ссылки на домашние работы
