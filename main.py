@@ -1,5 +1,4 @@
 import requests
-import fake_useragent
 from Handlers.User import auth_handler
 from bs4 import BeautifulSoup
 
@@ -44,7 +43,7 @@ def select_homework(headers: dict, cookies: list):  # дописать когд�
 
     # запрос
     response = session.get(exchange_link, headers=headers).text
-    soup = BeautifulSoup(response, 'lxml')
+    soup = BeautifulSoup(response, 'html.parser')
 
 
 class Session:
@@ -64,7 +63,7 @@ class Session:
         # запрос
         try:
             response = self.session.get(self.url).text
-            soup = BeautifulSoup(response, 'lxml')
+            soup = BeautifulSoup(response, 'html.parser')
         except Exception as ex:
             print(' - Ошибка запроса...')
             print(ex)
@@ -83,7 +82,7 @@ class Session:
                     try:
                         page_link = f"{self.url}&page={page}"
                         page_response = self.session.get(page_link).text
-                        page_soup = BeautifulSoup(page_response, 'lxml')
+                        page_soup = BeautifulSoup(page_response, 'html.parser')
                     except Exception as ex:
                         print(' - Ошибка запроса...')
                         print(ex)
@@ -112,7 +111,7 @@ class Session:
                   f"     Ссылка на работу: {link}")
             try:
                 response = self.session.get(link).text
-                soup = BeautifulSoup(response, 'lxml')
+                soup = BeautifulSoup(response, 'html.parser')
             except Exception as ex:
                 print(' - Ошибка запроса...')
                 print(ex)
